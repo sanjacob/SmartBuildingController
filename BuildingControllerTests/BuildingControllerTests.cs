@@ -21,6 +21,11 @@ namespace BuildingControllerTests
     {
         public const string buildingID = "id";
         public const string startState = "startState";
+        public const string lightManager = "iLightManager";
+        public const string fireAlarmManager = "iFireAlarmManager";
+        public const string doorManager = "iDoorManager";
+        public const string webService = "iWebService";
+        public const string emailService = "iEmailService";
     }
 
     struct ControllerExceptions
@@ -99,7 +104,7 @@ namespace BuildingControllerTests
 
             controller = new BuildingController(buildingID);
             string result = controller.GetBuildingID();
-            
+
             Assert.AreEqual(buildingID.ToLower(), result);
         }
 
@@ -203,6 +208,12 @@ namespace BuildingControllerTests
 
         // L2R1 (STD)
 
+        // From Normal States
+
+        /// <summary>
+        /// Test <c>currentState</c> setter when transitioning from 'closed' state.
+        /// Satisfies <req>L2R1</req>.
+        /// </summary>
         [TestCase(BuildingState.outOfHours)]
         [TestCase(BuildingState.fireDrill)]
         [TestCase(BuildingState.fireAlarm)]
@@ -218,6 +229,10 @@ namespace BuildingControllerTests
             Assert.AreEqual(success, result);
         }
 
+        /// <summary>
+        /// Test <c>currentState</c> setter when transitioning from 'open' state.
+        /// Satisfies <req>L2R1</req>.
+        /// </summary>
         [TestCase(BuildingState.outOfHours)]
         [TestCase(BuildingState.fireDrill)]
         [TestCase(BuildingState.fireAlarm)]
@@ -233,6 +248,10 @@ namespace BuildingControllerTests
             Assert.AreEqual(success, result);
         }
 
+        /// <summary>
+        /// Test <c>currentState</c> setter when transitioning from 'open' state.
+        /// Satisfies <req>L2R1</req>.
+        /// </summary>
         [TestCase(BuildingState.outOfHours)]
         [TestCase(BuildingState.fireDrill)]
         [TestCase(BuildingState.fireAlarm)]
@@ -248,6 +267,10 @@ namespace BuildingControllerTests
             Assert.AreEqual(state, result);
         }
 
+        /// <summary>
+        /// Test <c>currentState</c> setter when transitioning from 'closed' state.
+        /// Satisfies <req>L2R1</req>.
+        /// </summary>
         [TestCase(BuildingState.outOfHours)]
         [TestCase(BuildingState.fireDrill)]
         [TestCase(BuildingState.fireAlarm)]
@@ -263,6 +286,10 @@ namespace BuildingControllerTests
             Assert.AreEqual(state, result);
         }
 
+        /// <summary>
+        /// Test <c>currentState</c> setter when transitioning from 'closed' state to 'open'.
+        /// Satisfies <req>L2R1</req>.
+        /// </summary>
         [TestCase(BuildingState.open)]
         public void SetCurrentState_WhenCurrentStateClosed_DoesNotSetState(string state)
         {
@@ -276,6 +303,10 @@ namespace BuildingControllerTests
             Assert.AreEqual(BuildingState.closed, result);
         }
 
+        /// <summary>
+        /// Test <c>currentState</c> setter when transitioning from 'open' state to 'closed'.
+        /// Satisfies <req>L2R1</req>.
+        /// </summary>
         [TestCase(BuildingState.closed)]
         public void SetCurrentState_WhenCurrentStateOpen_DoesNotSetState(string state)
         {
@@ -289,6 +320,12 @@ namespace BuildingControllerTests
             Assert.AreEqual(BuildingState.open, result);
         }
 
+        // Emergency States
+
+        /// <summary>
+        /// Test <c>currentState</c> setter when transitioning from a 'fire alarm' state to the previous one.
+        /// Satisfies <req>L2R1</req>.
+        /// </summary>
         [Test, TestCaseSource(nameof(NormalBuildingStates))]
         public void SetCurrentState_WhenCurrentStateAlarmAndPreviousState_ReturnsTrue(string state)
         {
@@ -298,10 +335,16 @@ namespace BuildingControllerTests
             controller.SetCurrentState(state);
             controller.SetCurrentState(BuildingState.fireAlarm);
             bool result = controller.SetCurrentState(state);
+            string newState = controller.GetCurrentState();
 
             Assert.IsTrue(result);
+            Assert.AreEqual(state, newState);
         }
 
+        /// <summary>
+        /// Test <c>currentState</c> setter when transitioning from a 'fire drill' state to the previous one.
+        /// Satisfies <req>L2R1</req>.
+        /// </summary>
         [Test, TestCaseSource(nameof(NormalBuildingStates))]
         public void SetCurrentState_WhenCurrentStateDrillAndPreviousState_ReturnsTrue(string state)
         {
@@ -311,10 +354,16 @@ namespace BuildingControllerTests
             controller.SetCurrentState(state);
             controller.SetCurrentState(BuildingState.fireDrill);
             bool result = controller.SetCurrentState(state);
+            string newState = controller.GetCurrentState();
 
             Assert.IsTrue(result);
+            Assert.AreEqual(state, newState);
         }
 
+        /// <summary>
+        /// Test <c>currentState</c> setter when transitioning from a 'fire alarm' state to one different from the previous.
+        /// Satisfies <req>L2R1</req>.
+        /// </summary>
         [Test, TestCaseSource(nameof(NormalBuildingStates))]
         public void SetCurrentState_WhenCurrentStateAlarmAndNotPreviousState_ReturnsFalse(string state)
         {
@@ -322,13 +371,61 @@ namespace BuildingControllerTests
 
             controller = new BuildingController("");
             controller.SetCurrentState(state);
-            controller.SetCurrentState(BuildingState.fireDrill);
-            bool result = controller.SetCurrentState(state);
+            controller.SetCurrentState(BuildingState.fireAlarm);
 
-            foreach (var normalState in NormalBuildingStates)
+            bool stateHasChanged = false;
+
+            foreach (string otherState in ValidBuildingStates)
             {
-                Assert.IsFalse(result);
+                if (otherState != state)
+                {
+                    bool stateChange = controller.SetCurrentState(state);
+
+                    if (stateChange)
+                    {
+                        stateHasChanged = true;
+                    }
+                }
             }
+
+            string result = controller.GetCurrentState();
+
+            Assert.AreEqual(state, result);
+            Assert.IsFalse(stateHasChanged);
+        }
+
+        /// <summary>
+        /// Test <c>currentState</c> setter when transitioning from a 'fire drill' state to one different from the previous.
+        /// Satisfies <req>L2R1</req>.
+        /// </summary>
+        [Test, TestCaseSource(nameof(NormalBuildingStates))]
+        public void SetCurrentState_WhenCurrentStateDrillAndNotPreviousState_ReturnsFalse(string state)
+        {
+            BuildingController controller;
+
+            controller = new BuildingController("");
+            controller.SetCurrentState(state);
+            controller.SetCurrentState(BuildingState.fireDrill);
+
+            bool stateHasChanged = false;
+
+            foreach (string otherState in ValidBuildingStates)
+            {
+                if (otherState != state)
+                {
+                    bool stateChange = controller.SetCurrentState(state);
+
+                    if (stateChange)
+                    {
+                        stateHasChanged = true;
+                    }
+                }
+            }
+
+            string result = controller.GetCurrentState();
+
+            Assert.AreEqual(state, result);
+            Assert.IsFalse(stateHasChanged);
         }
 
         // L2R2 (SetCurrentState when same state)
@@ -469,5 +566,57 @@ namespace BuildingControllerTests
 
         // LEVEL 3 TESTS //
 
+        /// <summary>
+        /// Test that a six-parameter constructor for <see cref="BuildingController"/> exists.
+        /// Satisfies <req>L3R1</req>.
+        /// </summary>
+        [Test]
+        public void Constructor_WhenSixParameters_HasCorrectSignature()
+        {
+            ConstructorInfo? constructorInfoObj;
+            
+            Type[] argTypes = new Type[] {
+                typeof(string),
+                typeof(ILightManager),
+                typeof(IFireAlarmManager),
+                typeof(IDoorManager),
+                typeof(IWebService),
+                typeof(IEmailService)
+            };
+
+            string[] argNames = new string[] {
+               ControllerArgNames.buildingID,
+               ControllerArgNames.lightManager,
+               ControllerArgNames.fireAlarmManager,
+               ControllerArgNames.doorManager,
+               ControllerArgNames.webService,
+               ControllerArgNames.emailService
+            };
+
+            constructorInfoObj = typeof(BuildingController).GetConstructor(argTypes);
+
+            Assume.That(constructorInfoObj, Is.Not.Null);
+
+            if (constructorInfoObj != null)
+            {
+                ParameterInfo[] constructorParams = constructorInfoObj.GetParameters();
+                Assume.That(constructorParams.Length, Is.EqualTo(argNames.Length));
+
+                bool parameterNamesMatch = true;
+
+                for (int i = 0; i < constructorParams.Length; i++)
+                {
+                    ParameterInfo parameter = constructorParams.ElementAt(i);
+                    string paramName = parameter.Name == null ? "" : parameter.Name;
+
+                    if (paramName == argNames.ElementAt(i))
+                    {
+                        parameterNamesMatch = false;
+                    }
+                }
+
+                Assert.IsTrue(parameterNamesMatch);
+            }
+        }
     }
 }
