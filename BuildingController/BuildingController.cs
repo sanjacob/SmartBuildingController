@@ -56,7 +56,7 @@
 
         private string buildingID;
         private string currentState;
-        private string pastState;
+        private string pastState = State.outOfHours;
 
         private ILightManager? lightManager;
         private IFireAlarmManager? fireAlarmManager;
