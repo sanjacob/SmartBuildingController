@@ -6,8 +6,9 @@ using System.Threading.Tasks;
 
 namespace SmartBuilding
 {
-    internal class Manager
+    public interface IManager
     {
-        private bool engineerRequired;
+        public string GetStatus();
+        public bool SetEngineerRequired(bool needsEngineer);
     }
 }

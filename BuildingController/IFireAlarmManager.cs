@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SmartBuilding
 {
-    public interface IFireAlarmManager
+    public interface IFireAlarmManager : IManager
     {
         public void SetAlarm(bool isActive);
     }

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SmartBuilding
 {
-    public interface IDoorManager
+    public interface IDoorManager : IManager
     {
         public bool OpenDoor(int doorID);
         public bool LockDoor(int doorID);
