@@ -87,7 +87,7 @@ namespace BuildingControllerTests
                 if (firstParam != null)
                 {
                     string argName = firstParam.Name == null ? "" : firstParam.Name;
-                    Assert.AreEqual(argName, ControllerArgNames.buildingID);
+                    Assert.That(argName, Is.EqualTo(ControllerArgNames.buildingID));
                 }
             }
         }
@@ -105,7 +105,7 @@ namespace BuildingControllerTests
             controller = new BuildingController(buildingID);
             string result = controller.GetBuildingID();
 
-            Assert.AreEqual(buildingID.ToLower(), result);
+            Assert.That(result, Is.EqualTo(buildingID.ToLower()));
         }
 
         /// <summary>
@@ -121,7 +121,7 @@ namespace BuildingControllerTests
             controller.SetBuildingID(buildingID);
             string result = controller.GetBuildingID();
 
-            Assert.AreEqual(buildingID.ToLower(), result);
+            Assert.That(result, Is.EqualTo(buildingID.ToLower()));
         }
 
         /// <summary>
@@ -136,7 +136,7 @@ namespace BuildingControllerTests
             controller = new BuildingController("");
             string result = controller.GetCurrentState();
 
-            Assert.AreEqual(BuildingState.outOfHours, result);
+            Assert.That(result, Is.EqualTo(BuildingState.outOfHours));
         }
 
         // L1R7 (SetCurrentState from default startup)
@@ -153,7 +153,7 @@ namespace BuildingControllerTests
             controller = new BuildingController("");
             bool result = controller.SetCurrentState(state);
 
-            Assert.IsTrue(result);
+            Assert.That(result, Is.True);
         }
 
         /// <summary>
@@ -169,7 +169,7 @@ namespace BuildingControllerTests
             controller.SetCurrentState(state);
             string result = controller.GetCurrentState();
 
-            Assert.AreEqual(state, result);
+            Assert.That(result, Is.EqualTo(state));
         }
 
         /// <summary>
@@ -184,7 +184,7 @@ namespace BuildingControllerTests
             controller = new BuildingController("");
             bool result = controller.SetCurrentState(state);
 
-            Assert.IsFalse(result);
+            Assert.That(result, Is.False);
         }
 
         /// <summary>
@@ -200,7 +200,7 @@ namespace BuildingControllerTests
             controller.SetCurrentState(state);
             string result = controller.GetCurrentState();
 
-            Assert.AreEqual(BuildingState.outOfHours, result);
+            Assert.That(result, Is.EqualTo(BuildingState.outOfHours));
         }
 
 
@@ -226,7 +226,7 @@ namespace BuildingControllerTests
             controller.SetCurrentState(BuildingState.closed);
             bool result = controller.SetCurrentState(state);
 
-            Assert.AreEqual(success, result);
+            Assert.That(result, Is.EqualTo(success));
         }
 
         /// <summary>
@@ -245,7 +245,7 @@ namespace BuildingControllerTests
             controller.SetCurrentState(BuildingState.open);
             bool result = controller.SetCurrentState(state);
 
-            Assert.AreEqual(success, result);
+            Assert.That(result, Is.EqualTo(success));
         }
 
         /// <summary>
@@ -264,7 +264,7 @@ namespace BuildingControllerTests
             controller.SetCurrentState(state);
             string result = controller.GetCurrentState();
 
-            Assert.AreEqual(state, result);
+            Assert.That(result, Is.EqualTo(state));
         }
 
         /// <summary>
@@ -283,7 +283,7 @@ namespace BuildingControllerTests
             controller.SetCurrentState(state);
             string result = controller.GetCurrentState();
 
-            Assert.AreEqual(state, result);
+            Assert.That(result, Is.EqualTo(state));
         }
 
         /// <summary>
@@ -300,7 +300,7 @@ namespace BuildingControllerTests
             controller.SetCurrentState(state);
             string result = controller.GetCurrentState();
 
-            Assert.AreEqual(BuildingState.closed, result);
+            Assert.That(result, Is.EqualTo(BuildingState.closed));
         }
 
         /// <summary>
@@ -317,7 +317,7 @@ namespace BuildingControllerTests
             controller.SetCurrentState(state);
             string result = controller.GetCurrentState();
 
-            Assert.AreEqual(BuildingState.open, result);
+            Assert.That(result, Is.EqualTo(BuildingState.open));
         }
 
         // Emergency States
@@ -337,8 +337,8 @@ namespace BuildingControllerTests
             bool result = controller.SetCurrentState(state);
             string newState = controller.GetCurrentState();
 
-            Assert.IsTrue(result);
-            Assert.AreEqual(state, newState);
+            Assert.That(result, Is.True);
+            Assert.That(newState, Is.EqualTo(state));
         }
 
         /// <summary>
@@ -356,8 +356,8 @@ namespace BuildingControllerTests
             bool result = controller.SetCurrentState(state);
             string newState = controller.GetCurrentState();
 
-            Assert.IsTrue(result);
-            Assert.AreEqual(state, newState);
+            Assert.That(result, Is.True);
+            Assert.That(newState, Is.EqualTo(state));
         }
 
         /// <summary>
@@ -377,11 +377,9 @@ namespace BuildingControllerTests
 
             foreach (string otherState in ValidBuildingStates)
             {
-                if (otherState != state)
+                if (otherState != state && otherState != BuildingState.fireAlarm)
                 {
-                    bool stateChange = controller.SetCurrentState(state);
-
-                    if (stateChange)
+                    if (controller.SetCurrentState(otherState))
                     {
                         stateHasChanged = true;
                     }
@@ -390,8 +388,8 @@ namespace BuildingControllerTests
 
             string result = controller.GetCurrentState();
 
-            Assert.AreEqual(state, result);
-            Assert.IsFalse(stateHasChanged);
+            Assert.That(result, Is.EqualTo(BuildingState.fireAlarm));
+            Assert.That(stateHasChanged, Is.False);
         }
 
         /// <summary>
@@ -411,11 +409,9 @@ namespace BuildingControllerTests
 
             foreach (string otherState in ValidBuildingStates)
             {
-                if (otherState != state)
+                if (otherState != state && otherState != BuildingState.fireDrill)
                 {
-                    bool stateChange = controller.SetCurrentState(state);
-
-                    if (stateChange)
+                    if (controller.SetCurrentState(otherState))
                     {
                         stateHasChanged = true;
                     }
@@ -424,8 +420,8 @@ namespace BuildingControllerTests
 
             string result = controller.GetCurrentState();
 
-            Assert.AreEqual(state, result);
-            Assert.IsFalse(stateHasChanged);
+            Assert.That(result, Is.EqualTo(BuildingState.fireDrill));
+            Assert.That(stateHasChanged, Is.False);
         }
 
         // L2R2 (SetCurrentState when same state)
@@ -443,7 +439,7 @@ namespace BuildingControllerTests
             controller.SetCurrentState(state);
 
             bool result = controller.SetCurrentState(state);
-            Assert.IsTrue(result);
+            Assert.That(result, Is.True);
         }
 
         /// <summary>
@@ -460,7 +456,7 @@ namespace BuildingControllerTests
             controller.SetCurrentState(state);
 
             string result = controller.GetCurrentState();
-            Assert.AreEqual(state, result);
+            Assert.That(result, Is.EqualTo(state));
         }
 
         // L2R3 (Two-parameter Constructor)
@@ -493,8 +489,8 @@ namespace BuildingControllerTests
                     string firstArgName = firstParam.Name == null ? "" : firstParam.Name;
                     string secondArgName = secondParam.Name == null ? "" : secondParam.Name;
 
-                    Assert.AreEqual(firstArgName, ControllerArgNames.buildingID);
-                    Assert.AreEqual(secondArgName, ControllerArgNames.startState);
+                    Assert.That(firstArgName, Is.EqualTo(ControllerArgNames.buildingID));
+                    Assert.That(secondArgName, Is.EqualTo(ControllerArgNames.startState));
                 }
             }
         }
@@ -511,7 +507,7 @@ namespace BuildingControllerTests
             controller = new BuildingController("", state);
 
             string result = controller.GetCurrentState();
-            Assert.AreEqual(state, result);
+            Assert.That(result, Is.EqualTo(state));
         }
 
         /// <summary>
@@ -526,7 +522,7 @@ namespace BuildingControllerTests
             controller = new BuildingController("", state.ToUpper());
 
             string result = controller.GetCurrentState();
-            Assert.AreEqual(state, result);
+            Assert.That(result, Is.EqualTo(state));
         }
 
         /// <summary>
@@ -542,7 +538,7 @@ namespace BuildingControllerTests
             controller = new BuildingController("", ti.ToTitleCase(state));
 
             string result = controller.GetCurrentState();
-            Assert.AreEqual(state, result);
+            Assert.That(result, Is.EqualTo(state));
         }
 
         /// <summary>
@@ -554,13 +550,8 @@ namespace BuildingControllerTests
         [TestCaseSource(nameof(InvalidBuildingStates))]
         public void Constructor_WhenEmergencyState_ThrowsException(string state)
         {
-            BuildingController controller;
-
-            ArgumentException controllerException = Assert.Throws<ArgumentException>(() => {
-                controller = new BuildingController("", state);
-            });
-
-            Assert.AreEqual(ControllerExceptions.initialStateException, controllerException.Message);
+            Assert.That(() => { new BuildingController("", state); },
+                Throws.ArgumentException.With.Property("Message").EqualTo(ControllerExceptions.initialStateException));
         }
 
 
@@ -600,7 +591,7 @@ namespace BuildingControllerTests
             if (constructorInfoObj != null)
             {
                 ParameterInfo[] constructorParams = constructorInfoObj.GetParameters();
-                Assume.That(constructorParams.Length, Is.EqualTo(argNames.Length));
+                Assume.That(constructorParams, Has.Exactly(argNames.Length).Items);
 
                 bool parameterNamesMatch = true;
 
@@ -609,13 +600,13 @@ namespace BuildingControllerTests
                     ParameterInfo parameter = constructorParams.ElementAt(i);
                     string paramName = parameter.Name == null ? "" : parameter.Name;
 
-                    if (paramName == argNames.ElementAt(i))
+                    if (paramName != argNames.ElementAt(i))
                     {
                         parameterNamesMatch = false;
                     }
                 }
 
-                Assert.IsTrue(parameterNamesMatch);
+                Assert.That(parameterNamesMatch, Is.True);
             }
         }
     }
