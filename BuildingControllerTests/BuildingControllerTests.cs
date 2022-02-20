@@ -103,14 +103,37 @@ namespace BuildingControllerTests
             "deserunt mollit anim id est laborum."
         };
 
-        private static readonly object?[] ManagerStatuses =
+        private static readonly object?[] LightManagerStatuses =
         {
             "Lights,",
-            "Doors,",
-            "FireAlarm,",
             "Lights,OK,FAULT,OK,",
+            "Lights,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,",
+            "Lights,FAULT,FAULT,FAULT,FAULT,FAULT,FAULT,FAULT,FAULT,FAULT,FAULT,",
+            "Lights,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK," +
+                "OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK," +
+                "OK,OK,OK,OK,OK,OK,OK,",
+        };
+
+        private static readonly object?[] DoorManagerStatuses =
+        {
+            "Doors,",
             "Doors,OK,FAULT,OK,",
-            "FireAlarm,OK,FAULT,OK,"
+            "Doors,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,",
+            "Doors,FAULT,FAULT,FAULT,FAULT,FAULT,FAULT,FAULT,FAULT,FAULT,FAULT,",
+            "Doors,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK," +
+                "OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK," +
+                "OK,OK,OK,OK,OK,OK,OK,",
+        };
+
+        private static readonly object?[] AlarmManagerStatuses =
+        {
+            "FireAlarm,",
+            "FireAlarm,OK,FAULT,OK,",
+            "FireAlarm,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,",
+            "FireAlarm,FAULT,FAULT,FAULT,FAULT,FAULT,FAULT,FAULT,FAULT,FAULT,FAULT,",
+            "FireAlarm,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK," +
+                "OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK," +
+                "OK,OK,OK,OK,OK,OK,OK,",
         };
 
 
@@ -679,9 +702,9 @@ namespace BuildingControllerTests
         public void GetStatusReport_WhenCalled_ReturnsStatusMessages(
             // TestStrings only used in one parameter because
             // otherwise test cases would increase exponentially
-            [ValueSource(nameof(ManagerStatuses))] string lightStatus,
-            [ValueSource(nameof(ManagerStatuses))] string doorStatus,
-            [ValueSource(nameof(ManagerStatuses))] [ValueSource(nameof(TestStrings))] string alarmStatus)
+            [ValueSource(nameof(LightManagerStatuses))] string lightStatus,
+            [ValueSource(nameof(DoorManagerStatuses))] string doorStatus,
+            [ValueSource(nameof(IFireAlarmManager))] [ValueSource(nameof(TestStrings))] string alarmStatus)
         {
             BuildingController controller;
 
@@ -706,12 +729,31 @@ namespace BuildingControllerTests
         /// Satisfies <req>L3R4</req>.
         /// </summary>
         [Test]
-        public void SetCurrentState_WhenCalled_CallsOpenAllDoors(
-            // TestStrings only used in one parameter because
-            // otherwise test cases would increase exponentially
-            [ValueSource(nameof(ManagerStatuses))] string lightStatus,
-            [ValueSource(nameof(ManagerStatuses))] string doorStatus,
-            [ValueSource(nameof(ManagerStatuses))][ValueSource(nameof(TestStrings))] string alarmStatus)
+        public void SetCurrentState_WhenMovingToOpen_CallsOpenAllDoors([Values(true, false)] bool doorsOpen)
+        {
+            BuildingController controller;
+
+            ILightManager lightManager = Substitute.For<ILightManager>();
+            IFireAlarmManager fireAlarmManager = Substitute.For<IFireAlarmManager>();
+            IDoorManager doorManager = Substitute.For<IDoorManager>();
+            IWebService webService = Substitute.For<IWebService>();
+            IEmailService emailService = Substitute.For<IEmailService>();
+
+            doorManager.OpenAllDoors().Returns(doorsOpen);
+            controller = new BuildingController("", lightManager, fireAlarmManager, doorManager, webService, emailService);
+            controller.SetCurrentState(BuildingState.open);
+
+            bool result = doorManager.Received(1).OpenAllDoors();
+
+            Assert.That(result, Is.True);
+        }
+
+        /// <summary>
+        /// Test the <see cref="BuildingController.SetCurrentState(string)"/> when moving to <c>open</c> state.
+        /// Satisfies <req>L3R4</req>.
+        /// </summary>
+        [Test]
+        public void SetCurrentState_WhenMovingToOpen_CallsOpenAllDoors([Values(BuildingState.fireAlarm, BuildingState.fireDrill)] string initialState, [Values(true, false)] bool doorsOpen)
         {
             BuildingController controller;
 
@@ -722,9 +764,193 @@ namespace BuildingControllerTests
             IEmailService emailService = Substitute.For<IEmailService>();
 
             controller = new BuildingController("", lightManager, fireAlarmManager, doorManager, webService, emailService);
-            
+            doorManager.OpenAllDoors().Returns(true);
+            controller.SetCurrentState(BuildingState.open);
+            doorManager.ClearReceivedCalls();
 
-            bool result = doorManager.Received().OpenAllDoors();
+            doorManager.OpenAllDoors().Returns(doorsOpen);
+            controller.SetCurrentState(initialState);
+            controller.SetCurrentState(BuildingState.open);
+
+            bool result = doorManager.Received(1).OpenAllDoors();
+
+            Assert.That(result, Is.True);
+        }
+
+        /// <summary>
+        /// Test the <see cref="BuildingController.SetCurrentState(string)"/> when moving to <c>open</c> state.
+        /// Satisfies <req>L3R4</req>, <req>L3R5</req>.
+        /// </summary>
+        [Test]
+        public void SetCurrentState_WhenMovingToOpen_ReturnsBoolean([Values(true, false)] bool doorsOpen)
+        {
+            BuildingController controller;
+
+            ILightManager lightManager = Substitute.For<ILightManager>();
+            IFireAlarmManager fireAlarmManager = Substitute.For<IFireAlarmManager>();
+            IDoorManager doorManager = Substitute.For<IDoorManager>();
+            IWebService webService = Substitute.For<IWebService>();
+            IEmailService emailService = Substitute.For<IEmailService>();
+
+            doorManager.OpenAllDoors().Returns(doorsOpen);
+            controller = new BuildingController("", lightManager, fireAlarmManager, doorManager, webService, emailService);
+            bool result = controller.SetCurrentState(BuildingState.open);
+
+            Assert.That(result, Is.EqualTo(doorsOpen));
+        }
+
+        /// <summary>
+        /// Test the <see cref="BuildingController.SetCurrentState(string)"/> when moving to <c>open</c> state.
+        /// Satisfies <req>L3R4</req>, <req>L3R5</req>.
+        /// </summary>
+        [Test]
+        public void SetCurrentState_WhenMovingToOpenFromEmergency_ReturnsBoolean([Values(BuildingState.fireAlarm, BuildingState.fireDrill)] string initialState, [Values(true, false)] bool doorsOpen)
+        {
+            BuildingController controller;
+
+            ILightManager lightManager = Substitute.For<ILightManager>();
+            IFireAlarmManager fireAlarmManager = Substitute.For<IFireAlarmManager>();
+            IDoorManager doorManager = Substitute.For<IDoorManager>();
+            IWebService webService = Substitute.For<IWebService>();
+            IEmailService emailService = Substitute.For<IEmailService>();
+
+            controller = new BuildingController("", lightManager, fireAlarmManager, doorManager, webService, emailService);
+            doorManager.OpenAllDoors().Returns(true);
+            controller.SetCurrentState(BuildingState.open);
+            doorManager.ClearReceivedCalls();
+
+            doorManager.OpenAllDoors().Returns(doorsOpen);
+            controller.SetCurrentState(initialState);
+            bool result = controller.SetCurrentState(BuildingState.open);
+
+            Assert.That(result, Is.EqualTo(doorsOpen));
+        }
+
+        /// <summary>
+        /// Test the <see cref="BuildingController.SetCurrentState(string)"/> when moving to <c>open</c> state.
+        /// Satisfies <req>L3R5</req>.
+        /// </summary>
+        [Test]
+        public void SetCurrentState_WhenMovingToOpen_SetsState()
+        {
+            BuildingController controller;
+
+            ILightManager lightManager = Substitute.For<ILightManager>();
+            IFireAlarmManager fireAlarmManager = Substitute.For<IFireAlarmManager>();
+            IDoorManager doorManager = Substitute.For<IDoorManager>();
+            IWebService webService = Substitute.For<IWebService>();
+            IEmailService emailService = Substitute.For<IEmailService>();
+
+            doorManager.OpenAllDoors().Returns(true);
+            controller = new BuildingController("", lightManager, fireAlarmManager, doorManager, webService, emailService);
+            controller.SetCurrentState(BuildingState.open);
+            string result = controller.GetCurrentState();
+
+            Assert.That(result, Is.EqualTo(BuildingState.open));
+        }
+
+        /// <summary>
+        /// Test the <see cref="BuildingController.SetCurrentState(string)"/> when moving to <c>open</c> state.
+        /// Satisfies <req>L3R4</req>.
+        /// </summary>
+        [Test]
+        public void SetCurrentState_WhenMovingToOpen_DoesNotSetState()
+        {
+            BuildingController controller;
+
+            ILightManager lightManager = Substitute.For<ILightManager>();
+            IFireAlarmManager fireAlarmManager = Substitute.For<IFireAlarmManager>();
+            IDoorManager doorManager = Substitute.For<IDoorManager>();
+            IWebService webService = Substitute.For<IWebService>();
+            IEmailService emailService = Substitute.For<IEmailService>();
+
+            doorManager.OpenAllDoors().Returns(false);
+            controller = new BuildingController("", lightManager, fireAlarmManager, doorManager, webService, emailService);
+            controller.SetCurrentState(BuildingState.open);
+            string result = controller.GetCurrentState();
+
+            Assert.That(result, Is.EqualTo(BuildingState.outOfHours));
+        }
+
+        /// <summary>
+        /// Test the <see cref="BuildingController.SetCurrentState(string)"/> when moving to <c>open</c> state.
+        /// Satisfies <req>L3R5</req>.
+        /// </summary>
+        [Test]
+        public void SetCurrentState_WhenMovingToOpenFromEmergency_SetsState([Values(BuildingState.fireAlarm, BuildingState.fireDrill)] string initialState, [Values(true, false)] bool doorsOpen)
+        {
+            BuildingController controller;
+
+            ILightManager lightManager = Substitute.For<ILightManager>();
+            IFireAlarmManager fireAlarmManager = Substitute.For<IFireAlarmManager>();
+            IDoorManager doorManager = Substitute.For<IDoorManager>();
+            IWebService webService = Substitute.For<IWebService>();
+            IEmailService emailService = Substitute.For<IEmailService>();
+
+            controller = new BuildingController("", lightManager, fireAlarmManager, doorManager, webService, emailService);
+            doorManager.OpenAllDoors().Returns(true);
+            controller.SetCurrentState(BuildingState.open);
+            doorManager.ClearReceivedCalls();
+
+            doorManager.OpenAllDoors().Returns(doorsOpen);
+            controller.SetCurrentState(initialState);
+            controller.SetCurrentState(BuildingState.open);
+            string result = controller.GetCurrentState();
+
+            Assert.That(result, Is.EqualTo(BuildingState.open));
+        }
+
+        /// <summary>
+        /// Test the <see cref="BuildingController.SetCurrentState(string)"/> when moving to <c>open</c> state.
+        /// Satisfies <req>L3R4</req>.
+        /// </summary>
+        [Test]
+        public void SetCurrentState_WhenMovingToOpenFromEmergency_DoesNotSetState([Values(BuildingState.fireAlarm, BuildingState.fireDrill)] string initialState, [Values(true, false)] bool doorsOpen)
+        {
+            BuildingController controller;
+
+            ILightManager lightManager = Substitute.For<ILightManager>();
+            IFireAlarmManager fireAlarmManager = Substitute.For<IFireAlarmManager>();
+            IDoorManager doorManager = Substitute.For<IDoorManager>();
+            IWebService webService = Substitute.For<IWebService>();
+            IEmailService emailService = Substitute.For<IEmailService>();
+
+            controller = new BuildingController("", lightManager, fireAlarmManager, doorManager, webService, emailService);
+            doorManager.OpenAllDoors().Returns(true);
+            controller.SetCurrentState(BuildingState.open);
+            doorManager.ClearReceivedCalls();
+
+            doorManager.OpenAllDoors().Returns(doorsOpen);
+            controller.SetCurrentState(initialState);
+            controller.SetCurrentState(BuildingState.open);
+            string result = controller.GetCurrentState();
+
+            Assert.That(result, Is.EqualTo(initialState));
+        }
+
+        /// <summary>
+        /// Test the <see cref="BuildingController.SetCurrentState(string)"/> when moving to <c>open</c> state if already there.
+        /// Satisfies <req>L3R4</req>.
+        /// </summary>
+        [Test]
+        public void SetCurrentState_WhenMovingFromOpenToOpen_DoesNotCallOpenAllDoors()
+        {
+            BuildingController controller;
+
+            ILightManager lightManager = Substitute.For<ILightManager>();
+            IFireAlarmManager fireAlarmManager = Substitute.For<IFireAlarmManager>();
+            IDoorManager doorManager = Substitute.For<IDoorManager>();
+            IWebService webService = Substitute.For<IWebService>();
+            IEmailService emailService = Substitute.For<IEmailService>();
+
+            doorManager.OpenAllDoors().Returns(true);
+            controller = new BuildingController("", lightManager, fireAlarmManager, doorManager, webService, emailService);
+            controller.SetCurrentState(BuildingState.open);
+            doorManager.ClearReceivedCalls();
+            controller.SetCurrentState(BuildingState.open);
+
+            bool result = doorManager.DidNotReceive().OpenAllDoors();
+
             Assert.That(result, Is.True);
         }
     }
