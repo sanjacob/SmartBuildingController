@@ -704,7 +704,7 @@ namespace BuildingControllerTests
             // otherwise test cases would increase exponentially
             [ValueSource(nameof(LightManagerStatuses))] string lightStatus,
             [ValueSource(nameof(DoorManagerStatuses))] string doorStatus,
-            [ValueSource(nameof(IFireAlarmManager))] [ValueSource(nameof(TestStrings))] string alarmStatus)
+            [ValueSource(nameof(AlarmManagerStatuses))] [ValueSource(nameof(TestStrings))] string alarmStatus)
         {
             BuildingController controller;
 
@@ -729,7 +729,7 @@ namespace BuildingControllerTests
         /// Satisfies <req>L3R4</req>.
         /// </summary>
         [Test]
-        public void SetCurrentState_WhenMovingToOpen_CallsOpenAllDoors([Values(true, false)] bool doorsOpen)
+        public void SetCurrentState_WhenMovingToOpenFromInitial_CallsOpenAllDoors([Values(true, false)] bool doorsOpen)
         {
             BuildingController controller;
 
@@ -743,9 +743,7 @@ namespace BuildingControllerTests
             controller = new BuildingController("", lightManager, fireAlarmManager, doorManager, webService, emailService);
             controller.SetCurrentState(BuildingState.open);
 
-            bool result = doorManager.Received(1).OpenAllDoors();
-
-            Assert.That(result, Is.True);
+            doorManager.Received(1).OpenAllDoors();
         }
 
         /// <summary>
@@ -753,7 +751,7 @@ namespace BuildingControllerTests
         /// Satisfies <req>L3R4</req>.
         /// </summary>
         [Test]
-        public void SetCurrentState_WhenMovingToOpen_CallsOpenAllDoors([Values(BuildingState.fireAlarm, BuildingState.fireDrill)] string initialState, [Values(true, false)] bool doorsOpen)
+        public void SetCurrentState_WhenMovingToOpenFromEmergency_CallsOpenAllDoors([Values(BuildingState.fireAlarm, BuildingState.fireDrill)] string initialState, [Values(true, false)] bool doorsOpen)
         {
             BuildingController controller;
 
@@ -772,9 +770,7 @@ namespace BuildingControllerTests
             controller.SetCurrentState(initialState);
             controller.SetCurrentState(BuildingState.open);
 
-            bool result = doorManager.Received(1).OpenAllDoors();
-
-            Assert.That(result, Is.True);
+            doorManager.Received(1).OpenAllDoors();
         }
 
         /// <summary>
@@ -877,7 +873,7 @@ namespace BuildingControllerTests
         /// Satisfies <req>L3R5</req>.
         /// </summary>
         [Test]
-        public void SetCurrentState_WhenMovingToOpenFromEmergency_SetsState([Values(BuildingState.fireAlarm, BuildingState.fireDrill)] string initialState, [Values(true, false)] bool doorsOpen)
+        public void SetCurrentState_WhenMovingToOpenFromEmergency_SetsState([Values(BuildingState.fireAlarm, BuildingState.fireDrill)] string initialState)
         {
             BuildingController controller;
 
@@ -890,9 +886,6 @@ namespace BuildingControllerTests
             controller = new BuildingController("", lightManager, fireAlarmManager, doorManager, webService, emailService);
             doorManager.OpenAllDoors().Returns(true);
             controller.SetCurrentState(BuildingState.open);
-            doorManager.ClearReceivedCalls();
-
-            doorManager.OpenAllDoors().Returns(doorsOpen);
             controller.SetCurrentState(initialState);
             controller.SetCurrentState(BuildingState.open);
             string result = controller.GetCurrentState();
@@ -905,7 +898,7 @@ namespace BuildingControllerTests
         /// Satisfies <req>L3R4</req>.
         /// </summary>
         [Test]
-        public void SetCurrentState_WhenMovingToOpenFromEmergency_DoesNotSetState([Values(BuildingState.fireAlarm, BuildingState.fireDrill)] string initialState, [Values(true, false)] bool doorsOpen)
+        public void SetCurrentState_WhenMovingToOpenFromEmergency_DoesNotSetState([Values(BuildingState.fireAlarm, BuildingState.fireDrill)] string initialState)
         {
             BuildingController controller;
 
@@ -918,9 +911,7 @@ namespace BuildingControllerTests
             controller = new BuildingController("", lightManager, fireAlarmManager, doorManager, webService, emailService);
             doorManager.OpenAllDoors().Returns(true);
             controller.SetCurrentState(BuildingState.open);
-            doorManager.ClearReceivedCalls();
-
-            doorManager.OpenAllDoors().Returns(doorsOpen);
+            doorManager.OpenAllDoors().Returns(false);
             controller.SetCurrentState(initialState);
             controller.SetCurrentState(BuildingState.open);
             string result = controller.GetCurrentState();
@@ -949,9 +940,7 @@ namespace BuildingControllerTests
             doorManager.ClearReceivedCalls();
             controller.SetCurrentState(BuildingState.open);
 
-            bool result = doorManager.DidNotReceive().OpenAllDoors();
-
-            Assert.That(result, Is.True);
+            doorManager.DidNotReceive().OpenAllDoors();
         }
     }
 }

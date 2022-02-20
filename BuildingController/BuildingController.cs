@@ -113,7 +113,14 @@
 
         public string GetStatusReport()
         {
-            throw new NotImplementedException();
+            string report = "";
+
+            if (lightManager != null && doorManager != null && fireAlarmManager != null)
+            {
+                report = string.Format("{0}{1}{2}", lightManager.GetStatus(), doorManager.GetStatus(), fireAlarmManager.GetStatus());
+            }
+
+            return report;
         }
 
         public void SetBuildingID(string id)
@@ -126,12 +133,15 @@
             state = state.ToLower();
             bool validTransition = false;
 
+            // Only consider valid states
             if (State.isValid(state))
             {
+                bool sameState = (state == currentState);
+                validTransition = true;
+   
                 if (State.isNormal(currentState))
                 {
-                    validTransition = true;
-
+                    // Disallow transition from open to close or viceversa
                     if (State.forbiddenTransition.ContainsKey(currentState))
                     {
                         validTransition = State.forbiddenTransition[currentState] != state;
@@ -139,19 +149,28 @@
                 }
                 else if (State.isEmergency(currentState))
                 {
+                    // New state matches state at the time of entering emergency state.
                     validTransition = (state == pastState);
                 }
-            }
 
-            if (validTransition)
-            {
-                pastState = currentState;
-                currentState = state;
-            }
+                if (validTransition && !sameState)
+                {
+                    if (state == State.open)
+                    {
+                        if (doorManager != null)
+                        {
+                            bool result = doorManager.OpenAllDoors();
+                            if (!result)
+                            {
+                                return false;
+                            }
+                        }
+                    }
 
-            if (state == currentState)
-            {
-                validTransition = true;
+                    // Remember and update currentState
+                    pastState = currentState;
+                    currentState = state;
+                }
             }
 
             return validTransition;
