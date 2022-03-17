@@ -50,6 +50,9 @@ namespace BuildingControllerTests
             public const string emailAddress = "smartbuilding@uclan.ac.uk";
         }
 
+        /// <summary>
+        /// Testing strings for managers.
+        /// </summary>
         struct ManagerStatus
         {
             public const string lights = "Lights";
@@ -208,11 +211,13 @@ namespace BuildingControllerTests
             ConstructorInfo? constructorInfoObj;
             Type[] argTypes = new Type[] { typeof(string) };
 
+            // Lookup constructor with specified parameter
             constructorInfoObj = typeof(BuildingController).GetConstructor(argTypes);
             Assume.That(constructorInfoObj, Is.Not.Null);
 
             if (constructorInfoObj != null)
             {
+                // Verify parameter name
                 ParameterInfo[] constructorParams = constructorInfoObj.GetParameters();
                 ParameterInfo firstParam = constructorParams.First();
                 parameterName = firstParam.Name;
@@ -292,6 +297,7 @@ namespace BuildingControllerTests
         {
             BuildingController controller = new("");
 
+            // From initial state to any given state
             bool result = controller.SetCurrentState(state);
 
             Assert.That(result, Is.True);
@@ -603,6 +609,7 @@ namespace BuildingControllerTests
             ConstructorInfo? constructorInfoObj;
             Type[] argTypes = new Type[] { typeof(string), typeof(string) };
 
+            // Lookup two parameter constructor
             constructorInfoObj = typeof(BuildingController).GetConstructor(argTypes);
             Assume.That(constructorInfoObj, Is.Not.Null);
 
@@ -612,6 +619,7 @@ namespace BuildingControllerTests
                 ParameterInfo firstParam = constructorParams.ElementAt(0);
                 ParameterInfo secondParam = constructorParams.ElementAt(1);
 
+                // Verify parameter names
                 firstArgName = firstParam.Name;
                 secondArgName = secondParam.Name;                
             }
@@ -713,7 +721,7 @@ namespace BuildingControllerTests
                ControllerArgNames.emailService
             };
 
-
+            // Get constructor with 6 parameters, then check names
             constructorInfoObj = typeof(BuildingController).GetConstructor(argTypes);
             Assume.That(constructorInfoObj, Is.Not.Null);
 
@@ -762,7 +770,7 @@ namespace BuildingControllerTests
 
             string result = controller.GetStatusReport();
 
-            Assert.That(result, Is.EqualTo(string.Format("{0}{1}{2}", lightStatus, doorStatus, alarmStatus)));
+            Assert.That(result, Is.EqualTo(string.Format("{0}{1}{2}", lightStatus, alarmStatus, doorStatus)));
         }
 
         /// <summary>
@@ -802,10 +810,12 @@ namespace BuildingControllerTests
 
             BuildingController controller = new("", lightManager, fireAlarmManager, doorManager, webService, emailService);
             
+            // Must be in open state before switching to emergency
             controller.SetCurrentState(BuildingState.open);
             doorManager.OpenAllDoors().Returns(true);
             controller.SetCurrentState(initialState);
             doorManager.OpenAllDoors().Returns(doorsOpen);
+            // Store only the last state transition's calls
             doorManager.ClearReceivedCalls();
             controller.SetCurrentState(BuildingState.open);
 
@@ -971,6 +981,8 @@ namespace BuildingControllerTests
 
             BuildingController controller = new("", lightManager, fireAlarmManager, doorManager, webService, emailService);
 
+            // Since the state will be open already
+            // there is no need to call the OpenAllDoors method again
             controller.SetCurrentState(BuildingState.open);
             doorManager.ClearReceivedCalls();
             controller.SetCurrentState(BuildingState.open);
@@ -1198,8 +1210,6 @@ namespace BuildingControllerTests
         [TestCase(ManagerStatus.tenDevicesFault, ManagerStatus.tenDevicesFault, ManagerStatus.tenDevicesFault)]
         [TestCase(ManagerStatus.singleDeviceFault, ManagerStatus.singleDeviceFault, ManagerStatus.singleDeviceFault)]
         public void GetStatusReport_WhenFindsFaults_CallsLogEngineerRequired(
-            // TestStrings only used in one parameter because
-            // otherwise test cases would increase exponentially
             string lightStatus, string doorStatus, string alarmStatus)
         {
             ILightManager lightManager = Substitute.For<ILightManager>();
@@ -1215,6 +1225,7 @@ namespace BuildingControllerTests
 
             controller.GetStatusReport();
 
+            // Test part one of the requirement
             webService.Received(1).LogEngineerRequired(Arg.Any<string>());
         }
 
@@ -1225,8 +1236,6 @@ namespace BuildingControllerTests
         /// Satisfies <strong>L4R3</strong>.
         /// </summary>
         public void GetStatusReport_WhenAllOk_DoesNotCallLogEngineerRequired(
-            // TestStrings only used in one parameter because
-            // otherwise test cases would increase exponentially
             [ValueSource(nameof(OkManagerStatuses))] string lightStatus,
             [ValueSource(nameof(OkManagerStatuses))] string doorStatus,
             [ValueSource(nameof(OkManagerStatuses))] string alarmStatus)
@@ -1255,8 +1264,6 @@ namespace BuildingControllerTests
         /// </summary>
         [Test]
         public void GetStatusReport_WhenFindsFaultsSingleManagerInLights_CallsLogEngineerRequired(
-            // TestStrings only used in one parameter because
-            // otherwise test cases would increase exponentially
             [ValueSource(nameof(FaultyManagerStatuses))] string lightStatus,
             [ValueSource(nameof(OkManagerStatuses))] string doorStatus,
             [ValueSource(nameof(OkManagerStatuses))] string alarmStatus)
@@ -1285,8 +1292,6 @@ namespace BuildingControllerTests
         /// </summary>
         [Test]
         public void GetStatusReport_WhenFindsFaultsSingleManagerInDoors_CallsLogEngineerRequired(
-            // TestStrings only used in one parameter because
-            // otherwise test cases would increase exponentially
             [ValueSource(nameof(OkManagerStatuses))] string lightStatus,
             [ValueSource(nameof(FaultyManagerStatuses))] string doorStatus,
             [ValueSource(nameof(OkManagerStatuses))] string alarmStatus)
@@ -1315,8 +1320,6 @@ namespace BuildingControllerTests
         /// </summary>
         [Test]
         public void GetStatusReport_WhenFindsFaultsSingleManagerInAlarm_CallsLogEngineerRequired(
-            // TestStrings only used in one parameter because
-            // otherwise test cases would increase exponentially
             [ValueSource(nameof(OkManagerStatuses))] string lightStatus,
             [ValueSource(nameof(OkManagerStatuses))] string doorStatus,
             [ValueSource(nameof(FaultyManagerStatuses))] string alarmStatus)
@@ -1343,8 +1346,6 @@ namespace BuildingControllerTests
         /// </summary>
         [Test]
         public void GetStatusReport_WhenFindsFaultsAllManagers_CallsLogEngineerRequired(
-            // TestStrings only used in one parameter because
-            // otherwise test cases would increase exponentially
             [ValueSource(nameof(FaultyManagerStatuses))] string lightStatus,
             [ValueSource(nameof(FaultyManagerStatuses))] string doorStatus,
             [ValueSource(nameof(FaultyManagerStatuses))] string alarmStatus)
@@ -1363,7 +1364,7 @@ namespace BuildingControllerTests
             controller.GetStatusReport();
 
             webService.Received(1).LogEngineerRequired(string.Format("{0}{1}{2}",
-                ManagerStatus.lightsPrefix, ManagerStatus.doorsPrefix, ManagerStatus.alarmPrefix));
+                ManagerStatus.lightsPrefix, ManagerStatus.alarmPrefix, ManagerStatus.doorsPrefix));
         }
 
         /// <summary>
@@ -1372,8 +1373,6 @@ namespace BuildingControllerTests
         /// </summary>
         [Test]
         public void GetStatusReport_WhenFindsFaultsLightsAndDoors_CallsLogEngineerRequired(
-            // TestStrings only used in one parameter because
-            // otherwise test cases would increase exponentially
             [ValueSource(nameof(FaultyManagerStatuses))] string lightStatus,
             [ValueSource(nameof(FaultyManagerStatuses))] string doorStatus,
             [ValueSource(nameof(OkManagerStatuses))] string alarmStatus)
@@ -1401,8 +1400,6 @@ namespace BuildingControllerTests
         /// </summary>
         [Test]
         public void GetStatusReport_WhenFindsFaultsLightsAndAlarm_CallsLogEngineerRequired(
-            // TestStrings only used in one parameter because
-            // otherwise test cases would increase exponentially
             [ValueSource(nameof(FaultyManagerStatuses))] string lightStatus,
             [ValueSource(nameof(OkManagerStatuses))] string doorStatus,
             [ValueSource(nameof(FaultyManagerStatuses))] string alarmStatus)
@@ -1430,8 +1427,6 @@ namespace BuildingControllerTests
         /// </summary>
         [Test]
         public void GetStatusReport_WhenFindsFaultsDoorsAndAlarm_CallsLogEngineerRequired(
-            // TestStrings only used in one parameter because
-            // otherwise test cases would increase exponentially
             [ValueSource(nameof(OkManagerStatuses))] string lightStatus,
             [ValueSource(nameof(FaultyManagerStatuses))] string doorStatus,
             [ValueSource(nameof(FaultyManagerStatuses))] string alarmStatus)
@@ -1450,7 +1445,7 @@ namespace BuildingControllerTests
             controller.GetStatusReport();
 
             webService.Received(1).LogEngineerRequired(string.Format("{0}{1}",
-                ManagerStatus.doorsPrefix, ManagerStatus.alarmPrefix));
+                ManagerStatus.alarmPrefix, ManagerStatus.doorsPrefix));
         }
 
         // L4R4 
@@ -1472,6 +1467,8 @@ namespace BuildingControllerTests
             IEmailService emailService = Substitute.For<IEmailService>();
             doorManager.OpenAllDoors().Returns(true);
             doorManager.LockAllDoors().Returns(true);
+
+            // Set mock to throw exception if method is called
             webService.WhenForAnyArgs(x => x.LogFireAlarm(BuildingState.fireAlarm)).Do(x => { throw new Exception(errorMessage); });
 
             BuildingController controller = new("", lightManager, fireAlarmManager, doorManager, webService, emailService);         
@@ -1479,6 +1476,7 @@ namespace BuildingControllerTests
             controller.SetCurrentState(sourceState);
             controller.SetCurrentState(BuildingState.fireAlarm);
 
+            // Assert method call with exception message
             emailService.Received(1).SendEmail(
                 ExpectedStrings.emailAddress,
                 ExpectedStrings.emailSubject,
