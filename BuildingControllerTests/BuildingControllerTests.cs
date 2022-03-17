@@ -66,7 +66,7 @@ namespace BuildingControllerTests
             public const string threeDevicesMixed = "OK,FAULT,OK,";
             public const string fiveDevicesOk = "OK,OK,OK,OK,OK,";
             public const string tenDevicesOk = "OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,";
-            public const string twelveDevicesOk = "OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK";
+            public const string twelveDevicesOk = "OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,";
             public const string tenDevicesMixed = "FAULT,OK,OK,OK,OK,OK,OK,OK,OK,OK,";
             public const string tenDevicesFault = "FAULT,FAULT,FAULT,FAULT,FAULT,FAULT,FAULT,FAULT,FAULT,FAULT,";
             public const string manyDevicesOk ="OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK,OK," +
@@ -115,6 +115,7 @@ namespace BuildingControllerTests
             "á, é, í, ó, ú",
             "🥸",
             "'",
+            ",",
             "\"",
             "!@#$%^&*(){}?+_:;/=-]['",
             "   ",
@@ -232,8 +233,8 @@ namespace BuildingControllerTests
 
             controller = new BuildingController(buildingID);
             string result = controller.GetBuildingID();
-
-            Assert.That(result, Is.EqualTo(buildingID.ToLower()));
+            string expected = buildingID.ToLower();
+            Assert.That(result, Is.EqualTo(expected));
         }
 
         /// <summary>
@@ -274,7 +275,7 @@ namespace BuildingControllerTests
         /// Test <see cref="BuildingController.SetCurrentState"/> with valid states.
         /// Satisfies <strong>L1R7</strong>.
         /// </summary>
-        [Test, TestCaseSource(nameof(ValidBuildingStates))]
+        [TestCaseSource(nameof(ValidBuildingStates))]
         public void SetCurrentState_WhenValidState_ReturnsTrue(string state)
         {
             BuildingController controller = new("");
@@ -790,9 +791,10 @@ namespace BuildingControllerTests
             BuildingController controller = new("", lightManager, fireAlarmManager, doorManager, webService, emailService);
             
             controller.SetCurrentState(BuildingState.open);
-            doorManager.ClearReceivedCalls();
-            doorManager.OpenAllDoors().Returns(doorsOpen);
+            doorManager.OpenAllDoors().Returns(true);
             controller.SetCurrentState(initialState);
+            doorManager.OpenAllDoors().Returns(doorsOpen);
+            doorManager.ClearReceivedCalls();
             controller.SetCurrentState(BuildingState.open);
 
             doorManager.Received(1).OpenAllDoors();
@@ -836,9 +838,10 @@ namespace BuildingControllerTests
             BuildingController controller = new("", lightManager, fireAlarmManager, doorManager, webService, emailService);
 
             controller.SetCurrentState(BuildingState.open);
-            doorManager.ClearReceivedCalls();
-            doorManager.OpenAllDoors().Returns(doorsOpen);
+            doorManager.OpenAllDoors().Returns(true);
             controller.SetCurrentState(initialState);
+            doorManager.OpenAllDoors().Returns(doorsOpen);
+            doorManager.ClearReceivedCalls();
             bool result = controller.SetCurrentState(BuildingState.open);
 
             Assert.That(result, Is.EqualTo(doorsOpen));
@@ -929,8 +932,10 @@ namespace BuildingControllerTests
             BuildingController controller = new("", lightManager, fireAlarmManager, doorManager, webService, emailService);
 
             controller.SetCurrentState(BuildingState.open);
-            doorManager.OpenAllDoors().Returns(false);
+            doorManager.OpenAllDoors().Returns(true);
             controller.SetCurrentState(initialState);
+            doorManager.OpenAllDoors().Returns(false);
+
             controller.SetCurrentState(BuildingState.open);
             string result = controller.GetCurrentState();
 
@@ -1058,6 +1063,7 @@ namespace BuildingControllerTests
 
             controller.SetCurrentState(BuildingState.closed);
             controller.SetCurrentState(sourceState);
+            lightManager.ClearReceivedCalls();
             controller.SetCurrentState(BuildingState.closed);
 
             lightManager.Received(1).SetAllLights(false);
@@ -1172,7 +1178,7 @@ namespace BuildingControllerTests
         /// Test that <see cref="BuildingController.GetStatusReport"/>
         /// calls the <see cref="IWebService.LogEngineerRequired"/>
         /// method if a fault was detected.
-        /// Satisfies <strong>L4R4</strong>.
+        /// Satisfies <strong>L4R3</strong>.
         /// </summary>
         [TestCase(ManagerStatus.threeDevicesMixed, ManagerStatus.threeDevicesMixed, ManagerStatus.threeDevicesMixed)]
         [TestCase(ManagerStatus.manyDevicesOk, ManagerStatus.manyDevicesOk, ManagerStatus.singleDeviceFault)]
@@ -1204,7 +1210,7 @@ namespace BuildingControllerTests
         /// Test that <see cref="BuildingController.GetStatusReport"/>
         /// does not call the <see cref="IWebService.LogEngineerRequired"/>
         /// method if a fault was not detected.
-        /// Satisfies <strong>L4R4</strong>.
+        /// Satisfies <strong>L4R3</strong>.
         /// </summary>
         public void GetStatusReport_WhenAllOk_DoesNotCallLogEngineerRequired(
             // TestStrings only used in one parameter because
@@ -1233,7 +1239,7 @@ namespace BuildingControllerTests
         /// Test that <see cref="BuildingController.GetStatusReport"/>
         /// calls the <see cref="IWebService.LogEngineerRequired"/>
         /// method if a fault was detected in the lights manager.
-        /// Satisfies <strong>L4R4</strong>.
+        /// Satisfies <strong>L4R3</strong>.
         /// </summary>
         [Test]
         public void GetStatusReport_WhenFindsFaultsSingleManagerInLights_CallsLogEngineerRequired(
@@ -1263,7 +1269,7 @@ namespace BuildingControllerTests
         /// Test that <see cref="BuildingController.GetStatusReport"/>
         /// calls the <see cref="IWebService.LogEngineerRequired"/>
         /// method if a fault was detected in the doors manager.
-        /// Satisfies <strong>L4R4</strong>.
+        /// Satisfies <strong>L4R3</strong>.
         /// </summary>
         [Test]
         public void GetStatusReport_WhenFindsFaultsSingleManagerInDoors_CallsLogEngineerRequired(
@@ -1293,7 +1299,7 @@ namespace BuildingControllerTests
         /// Test that <see cref="BuildingController.GetStatusReport"/>
         /// calls the <see cref="IWebService.LogEngineerRequired"/>
         /// method if a fault was detected in the fire alarm manager.
-        /// Satisfies <strong>L4R4</strong>.
+        /// Satisfies <strong>L4R3</strong>.
         /// </summary>
         [Test]
         public void GetStatusReport_WhenFindsFaultsSingleManagerInAlarm_CallsLogEngineerRequired(
@@ -1321,7 +1327,7 @@ namespace BuildingControllerTests
 
         /// <summary>
         /// Test the <see cref="BuildingController.GetStatusReport"/> method using stubs.
-        /// Satisfies <strong>L4R4</strong>.
+        /// Satisfies <strong>L4R3</strong>.
         /// </summary>
         [Test]
         public void GetStatusReport_WhenFindsFaultsAllManagers_CallsLogEngineerRequired(
@@ -1350,7 +1356,7 @@ namespace BuildingControllerTests
 
         /// <summary>
         /// Test the <see cref="BuildingController.GetStatusReport"/> method using stubs.
-        /// Satisfies <strong>L4R4</strong>.
+        /// Satisfies <strong>L4R3</strong>.
         /// </summary>
         [Test]
         public void GetStatusReport_WhenFindsFaultsLightsAndDoors_CallsLogEngineerRequired(
@@ -1379,7 +1385,7 @@ namespace BuildingControllerTests
 
         /// <summary>
         /// Test the <see cref="BuildingController.GetStatusReport"/> method using stubs.
-        /// Satisfies <strong>L4R4</strong>.
+        /// Satisfies <strong>L4R3</strong>.
         /// </summary>
         [Test]
         public void GetStatusReport_WhenFindsFaultsLightsAndAlarm_CallsLogEngineerRequired(
@@ -1408,7 +1414,7 @@ namespace BuildingControllerTests
 
         /// <summary>
         /// Test the <see cref="BuildingController.GetStatusReport"/> method using stubs.
-        /// Satisfies <strong>L4R4</strong>.
+        /// Satisfies <strong>L4R3</strong>.
         /// </summary>
         [Test]
         public void GetStatusReport_WhenFindsFaultsDoorsAndAlarm_CallsLogEngineerRequired(
