@@ -78,7 +78,12 @@ namespace SmartBuilding
 
         public BuildingController(string id)
         {
-            buildingID = id.ToLower();
+            if (!string.IsNullOrEmpty(id))
+            {
+                id = id.ToLower();
+            }
+
+            buildingID = id;
             currentState = InitialState();
         }
 
@@ -103,9 +108,15 @@ namespace SmartBuilding
 
         private string InitialState(string state = State.initialState)
         {
-            state = state.ToLower();
+            bool validState = !string.IsNullOrEmpty(state);
 
-            if (!State.isNormal(state))
+            if (validState)
+            {
+                state = state.ToLower();
+                validState = State.isNormal(state);
+            }
+
+            if (!validState)
             {
                 throw new ArgumentException(ErrorMessages.invalidStartState);
             }
@@ -206,23 +217,32 @@ namespace SmartBuilding
 
         public void SetBuildingID(string id)
         {
-            buildingID = id.ToLower();
+            if (!string.IsNullOrEmpty(id))
+            {
+                id = id.ToLower();
+            }
+
+            buildingID = id;
         }
 
         public bool SetCurrentState(string state)
         {
-            state = state.ToLower();
-            bool validTransition = IsValidStateTransition(state);
-
-            if (state != currentState)
+            bool validTransition = false;
+            if (!string.IsNullOrEmpty(state))
             {
-                validTransition &= StateTransitionSideEffects(state);
+                state = state.ToLower();
+                validTransition = IsValidStateTransition(state);
 
-                if (validTransition)
+                if (state != currentState)
                 {
-                    // Remember and update currentState
-                    pastState = currentState;
-                    currentState = state;
+                    validTransition &= StateTransitionSideEffects(state);
+
+                    if (validTransition)
+                    {
+                        // Remember and update currentState
+                        pastState = currentState;
+                        currentState = state;
+                    }
                 }
             }
            

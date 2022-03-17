@@ -233,7 +233,14 @@ namespace BuildingControllerTests
 
             controller = new BuildingController(buildingID);
             string result = controller.GetBuildingID();
-            string expected = buildingID.ToLower();
+
+
+            string expected = buildingID;
+            if (!string.IsNullOrEmpty(buildingID))
+            {
+                expected = expected.ToLower();
+            }
+            
             Assert.That(result, Is.EqualTo(expected));
         }
 
@@ -249,7 +256,12 @@ namespace BuildingControllerTests
 
             controller.SetBuildingID(buildingID);
             string result = controller.GetBuildingID();
-            string expected = buildingID.ToLower();
+
+            string expected = buildingID;
+            if (!string.IsNullOrEmpty(buildingID))
+            {
+                expected = expected.ToLower();
+            }
 
             Assert.That(result, Is.EqualTo(expected));
         }
