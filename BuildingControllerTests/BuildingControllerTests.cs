@@ -1235,6 +1235,7 @@ namespace BuildingControllerTests
         /// method if a fault was not detected.
         /// Satisfies <strong>L4R3</strong>.
         /// </summary>
+        [Test]
         public void GetStatusReport_WhenAllOk_DoesNotCallLogEngineerRequired(
             [ValueSource(nameof(OkManagerStatuses))] string lightStatus,
             [ValueSource(nameof(OkManagerStatuses))] string doorStatus,
@@ -1364,7 +1365,7 @@ namespace BuildingControllerTests
             controller.GetStatusReport();
 
             webService.Received(1).LogEngineerRequired(string.Format("{0}{1}{2}",
-                ManagerStatus.lightsPrefix, ManagerStatus.alarmPrefix, ManagerStatus.doorsPrefix));
+                ManagerStatus.lightsPrefix, ManagerStatus.doorsPrefix, ManagerStatus.alarmPrefix));
         }
 
         /// <summary>
@@ -1445,7 +1446,7 @@ namespace BuildingControllerTests
             controller.GetStatusReport();
 
             webService.Received(1).LogEngineerRequired(string.Format("{0}{1}",
-                ManagerStatus.alarmPrefix, ManagerStatus.doorsPrefix));
+               ManagerStatus.doorsPrefix, ManagerStatus.alarmPrefix));
         }
 
         // L4R4 
@@ -1456,6 +1457,7 @@ namespace BuildingControllerTests
         /// when moving to <c>fire alarm</c> state.
         /// Satisfies <strong>L4R4</strong>.
         /// </summary>
+        [Test]
         public void SetCurrentState_WhenMovingToAlarmState_CallsSendEmail(
             [ValueSource(nameof(NormalBuildingStates))] string sourceState,
             [ValueSource(nameof(TestStrings))] string errorMessage)
@@ -1469,7 +1471,8 @@ namespace BuildingControllerTests
             doorManager.LockAllDoors().Returns(true);
 
             // Set mock to throw exception if method is called
-            webService.WhenForAnyArgs(x => x.LogFireAlarm(BuildingState.fireAlarm)).Do(x => { throw new Exception(errorMessage); });
+            Exception e = new Exception(errorMessage);
+            webService.WhenForAnyArgs(x => x.LogFireAlarm(BuildingState.fireAlarm)).Do(x => { throw e; });
 
             BuildingController controller = new("", lightManager, fireAlarmManager, doorManager, webService, emailService);         
 
@@ -1477,10 +1480,10 @@ namespace BuildingControllerTests
             controller.SetCurrentState(BuildingState.fireAlarm);
 
             // Assert method call with exception message
-            emailService.Received(1).SendEmail(
+            emailService.Received(1).SendMail(
                 ExpectedStrings.emailAddress,
                 ExpectedStrings.emailSubject,
-                Arg.Is<string>(x => x.Contains(errorMessage))
+                Arg.Is<string>(x => x.Contains(e.Message))
             );
         }
     }

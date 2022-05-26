@@ -73,6 +73,15 @@
         }
 
         /// <summary>
+        /// Contains strings for email sending.
+        /// </summary>
+        private class EmailStrings
+        {
+            public const string address = "smartbuilding@uclan.ac.uk";
+            public const string subject = "failed to log alarm";
+        }
+
+        /// <summary>
         /// Stores the building ID
         /// </summary>
         private string buildingID;
@@ -223,16 +232,15 @@
                     faultyDevices.Add(Manager.lights);
                 }
 
-                if (ParseStatus(fireAlarmStatus, Manager.alarm))
-                {
-                    faultyDevices.Add(Manager.alarm);
-                }
-
                 if (ParseStatus(doorStatus, Manager.doors))
                 {
                     faultyDevices.Add(Manager.doors);
                 }
 
+                if (ParseStatus(fireAlarmStatus, Manager.alarm))
+                {
+                    faultyDevices.Add(Manager.alarm);
+                }
 
                 // Log faulty devices
                 if (faultyDevices.Count > 0)
@@ -421,7 +429,17 @@
 
                 if (webService != null)
                 {
-                    webService.LogFireAlarm(State.fireAlarm);
+                    try
+                    {
+                        webService.LogFireAlarm(State.fireAlarm);
+                    }
+                    catch (Exception e)
+                    {
+                        if (emailService != null)
+                        {
+                            emailService.SendMail(EmailStrings.address, EmailStrings.subject, e.Message);
+                        }
+                    }
                 }
             }
 

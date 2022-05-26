@@ -8,6 +8,6 @@ namespace SmartBuilding
 {
     public interface IEmailService
     {
-        public void SendEmail(string emailAddress, string subject, string message);
+        public void SendMail(string emailAddress, string subject, string message);
     }
 }
